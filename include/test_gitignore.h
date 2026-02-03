@@ -1,3 +1,0 @@
-#ifndef TEST
-
-#endif
