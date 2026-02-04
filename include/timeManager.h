@@ -14,9 +14,9 @@ class TimeManager{
         static void taskLoop(void* pvParameters);
 
     public:
-        TimeManager(const char* ntpServer, long gmtOffset_sec, int daylightOffset_sec);
+        TimeManager(const char* _ntpServer, long _gmtOffset_sec, int _daylightOffset_sec);
 
-        void startTask(EventGroupHandle_t eventGroup);
+        void startTimeTask(EventGroupHandle_t eventGroup);
 
         String getFormattedTime();
 
