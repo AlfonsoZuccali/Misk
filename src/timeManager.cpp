@@ -50,6 +50,8 @@ void TimeManager :: taskLoop(void* pvParameters){
         vTaskDelay(pdMS_TO_TICKS(1000)); 
     }
 
+    xEventGroupSetBits(self->_eventGroup,TIME_SYNCED_BIT);
+
     Serial.print("Time synced!");
 
     for (;;) {
@@ -64,7 +66,7 @@ String TimeManager::getFormattedTime() {
     if(!getLocalTime(&timeinfo)){
         return "--:--";
     }
-    char timeStringBuff[9]; // HH:MM:SS + null terminator
-    strftime(timeStringBuff, sizeof(timeStringBuff), "%H:%M:%S", &timeinfo);
+    char timeStringBuff[6]; // HH:MM:SS + null terminator
+    strftime(timeStringBuff, sizeof(timeStringBuff), "%H:%M", &timeinfo);
     return String(timeStringBuff);
 }

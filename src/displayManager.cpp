@@ -62,15 +62,18 @@ void DisplayManager :: taskLoop(void* pvParameters){
         //wait for the event group bits to enter the correct state
         EventBits_t bits = xEventGroupGetBits(systemEventGroup);
         bool wifiReady = (bits & WIFI_CONNECTED_BIT);
-        bool timeReady = (bits & (TIME_SYNCED_BIT + WIFI_CONNECTED_BIT));
-        Serial.println("Wifi ready:");
-        Serial.print(wifiReady);
-        Serial.println("time Ready: ");
-        Serial.print(timeReady);
+        bool timeReady = (bits & TIME_SYNCED_BIT);
+        
+        Serial.print("BITS: ");
+        Serial.println(bits, BIN);
+
+        Serial.print("TIME MASK: ");
+        Serial.println(TIME_SYNCED_BIT, BIN);
+
 
         
         //get the current time from the time manager
-        String currentTime = "--:--:--";
+        String currentTime = "--:--";
         if(timeReady){
             currentTime = timeManager.getFormattedTime();
         }
