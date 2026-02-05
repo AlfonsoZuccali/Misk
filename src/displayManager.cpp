@@ -3,6 +3,7 @@
 #include "TimeManager.h" 
 #include "WiFiManager.h"
 
+
 extern TimeManager timeManager;
 extern EventGroupHandle_t systemEventGroup;
 
@@ -25,19 +26,6 @@ void DisplayManager :: begin(){
     _tft.init();
     _tft.setRotation(1); // 0=Portrait, 1=Landscape
     _tft.fillScreen(TFT_BLACK);
-    
-    // Prueba de color visual
-    _tft.fillScreen(TFT_RED);
-    vTaskDelay(pdMS_TO_TICKS(500));
-    _tft.fillScreen(TFT_GREEN);
-    vTaskDelay(pdMS_TO_TICKS(500));
-    _tft.fillScreen(TFT_BLUE);
-    vTaskDelay(pdMS_TO_TICKS(500));
-    
-    _tft.fillScreen(TFT_BLACK);
-    _tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    _tft.drawString("MiMo ST7735", 10, 10, 2);
-    Serial.println("[Display] Test finalizado.");
 }
 
 void DisplayManager :: startTask(){
@@ -55,55 +43,74 @@ void DisplayManager :: taskLoop(void* pvParameters){
     DisplayManager* self = (DisplayManager*)pvParameters;
 
     self->begin();
+    self->_currentDisplayState = DisplayState :: BOOT_LOGO;
     vTaskDelay(pdMS_TO_TICKS(1000)); //Initialization text shown for a second
-    
+
+
     for(;;){
         
         //wait for the event group bits to enter the correct state
         EventBits_t bits = xEventGroupGetBits(systemEventGroup);
         bool wifiReady = (bits & WIFI_CONNECTED_BIT);
         bool timeReady = (bits & TIME_SYNCED_BIT);
-        
-        Serial.print("BITS: ");
-        Serial.println(bits, BIN);
 
-        Serial.print("TIME MASK: ");
-        Serial.println(TIME_SYNCED_BIT, BIN);
-
-
-        
         //get the current time from the time manager
         String currentTime = "--:--";
         if(timeReady){
             currentTime = timeManager.getFormattedTime();
         }
 
-        //draw
-        self->drawClock(currentTime);
-        self->drawWifiStatusIcon(wifiReady, timeReady);
+        switch (self->_currentDisplayState)
+        {
+            case DisplayState :: BOOT_LOGO:
+                self->renderBootScreen();
+                vTaskDelay(pdMS_TO_TICKS(3000));
+                self->_lastState = self->_currentDisplayState;
+                self->_currentDisplayState = DisplayState :: CLOCK_SCREEN;
+                break;
+
+            case DisplayState :: CLOCK_SCREEN:
+                self->renderClockScreen(currentTime, wifiReady);
+                break;
+        }
 
         //refresh rate
         vTaskDelay(pdMS_TO_TICKS(200)); // every 200ms
     }
 }
 
-void DisplayManager :: drawClock(String timeString){
-    if(timeString != _lastTime){
-        _tft.setTextDatum(MC_DATUM); //center text
-        _tft.setTextColor(TFT_CYAN, TFT_BLACK);
-        _tft.drawString(timeString, 80, 64, 4);
+void DisplayManager :: renderBootScreen(){
 
-        _lastTime = timeString;
-    }
+    _tft.fillScreen(0x0);
+    // background
+    _tft.fillRect(0, 0, 160, 128, 0xF206);
+    // Layer 1
+    _tft.setTextColor(0xFFFF);
+    _tft.setTextSize(3);
+    _tft.setFreeFont();
+    _tft.drawString("Misk", 46, 54);
+    // Layer 2
+    _tft.setTextSize(1);
+    _tft.drawString("booting", 60, 115);
 }
 
-void DisplayManager :: drawWifiStatusIcon(bool wifiConnected, bool timeSynced){
-    if (wifiConnected != _lastWifiState){
-        if(wifiConnected){
-            _tft.fillCircle(150,10,3, TFT_GREEN);
-        }else{
-            _tft.fillCircle(150, 10, 3, TFT_RED);
-        }
-        _lastWifiState = wifiConnected;
+void DisplayManager :: renderClockScreen(String time, bool wifiReady){
+    
+   if(_lastTime != time){
+        _tft.fillScreen(0x0);
+        // Layer 1
+        _tft.setTextColor(0xFFFF);
+        _tft.setTextSize(5);
+        _tft.setFreeFont();
+        _tft.drawString("16:23", 8, 47);
+        _lastTime = time;
+   }
+    
+    // wifi_full
+    if(wifiReady){
+        _tft.drawBitmap(141, 0, image_wifi_full_bits, 19, 16, 0xFFFF);
+    }else{
+        // wifi_not_connected
+        _tft.drawBitmap(141, 0, image_wifi_not_connected_bits, 19, 16, 0xFFFF);
     }
 }
