@@ -83,7 +83,7 @@ void DisplayManager :: renderBootScreen(){
 
     _tft.fillScreen(0x0);
     // background
-    _tft.fillRect(0, 0, 160, 128, 0xF206);
+    _tft.fillRect(0, 0, 160, 128, MISK_RED);
     // Layer 1
     _tft.setTextColor(0xFFFF);
     _tft.setTextSize(3);
@@ -102,15 +102,15 @@ void DisplayManager :: renderClockScreen(String time, bool wifiReady){
         _tft.setTextColor(0xFFFF);
         _tft.setTextSize(5);
         _tft.setFreeFont();
-        _tft.drawString("16:23", 8, 47);
+        _tft.drawString(time, 8, 47);
         _lastTime = time;
    }
     
     // wifi_full
     if(wifiReady){
-        _tft.drawBitmap(141, 0, image_wifi_full_bits, 19, 16, 0xFFFF);
+        _tft.drawBitmap(141, 0, image_wifi_full_bits, 19, 16, MISK_GREEN);
     }else{
         // wifi_not_connected
-        _tft.drawBitmap(141, 0, image_wifi_not_connected_bits, 19, 16, 0xFFFF);
+        _tft.drawBitmap(141, 0, image_wifi_not_connected_bits, 19, 16, MISK_RED);
     }
 }
