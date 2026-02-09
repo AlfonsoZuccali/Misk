@@ -54,9 +54,7 @@ void TimeManager :: taskLoop(void* pvParameters){
 
     Serial.print("Time synced!");
 
-    for (;;) {
-        // Solo para debug por ahora: imprimimos la hora cada 5 seg
-        Serial.println(self->getFormattedTime());
+    for(;;){
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
