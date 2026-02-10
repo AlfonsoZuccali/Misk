@@ -10,10 +10,10 @@ InputManager :: InputManager(){
 void InputManager :: begin(QueueHandle_t queue){
     _commandQueue = queue;
 
-    _btnMode   = new Button(PIN_MODE,   50, 1000);
-    _btnAction = new Button(PIN_ACTION, 50, 800);
-    _btnSkip   = new Button(PIN_SKIP,   50, 800);
-    _btnReset  = new Button(PIN_RESET,  50, 800);
+    _btnMode   = new Button(PIN_MODE,   50, 500);
+    _btnAction = new Button(PIN_ACTION, 50, 500);
+    _btnSkip   = new Button(PIN_SKIP,   50, 500);
+    _btnReset  = new Button(PIN_RESET,  50, 500);
 
     xTaskCreate(
         taskLoop,
