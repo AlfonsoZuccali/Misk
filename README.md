@@ -5,13 +5,15 @@
 ![Framework](https://img.shields.io/badge/Framework-Arduino%20%7C%20FreeRTOS-green)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-**Misk** is a real-time embedded operating system (RTOS) designed for desktop productivity devices. Built on **ESP32** and **FreeRTOS**, it uses an object-oriented architecture to manage multiple asynchronous tasks (UI, Networking, NTP Synchronization) ensuring deterministic, robust, and scalable performance.
+**Misk** is a real-time embedded operating system (RTOS) designed for desktop productivity devices. Built on **ESP32** and **FreeRTOS**, it uses an object-oriented architecture to manage multiple asynchronous tasks (UI, Networking, NTP Synchronization, apps such as Pomodoro timers, Clock,etc.) ensuring deterministic, robust, and scalable performance.
+
+**NOTE THAT THIS IS AN EDUCATIONAL PROJECT MADE FOR PERSONAL USE AND ITS FINAL PURPOSE IS FOR LEARNING**
 
 ---
 
 ## System Architecture
 
-The system moves away from the classic Arduino "Super Loop" to adopt a modular design based on **Managers**. Each critical subsystem (WiFi, Time, Display) runs in its own FreeRTOS Task, communicating exclusively through an **Event Bus (EventGroup)** to maintain decoupling.
+The system tries to move away as much from the classic Arduino "Super Loop" to adopt a modular design based on **Managers**. Each critical subsystem (WiFi, Time, Display) runs in its own FreeRTOS Task, communicating exclusively through an **Event Bus (EventGroup)** to maintain decoupling.
 
 ### 1. Class Diagram (OO Design)
 Business logic is encapsulated, separating hardware management (`Drivers`) from application logic (`Managers`).
@@ -60,7 +62,8 @@ classDiagram
     TimeManager <..> EventBus : Consumes/Publishes
     DisplayManager <.. EventBus : Consumes State
 ```
-The sequence diagram shows how the system boots up and synchronizes without blocking the main CPU. The UI always remains responsive, even if the network goes down.
+### 2. Sequence Diagram
+The system boots up and synchronizes without blocking the main CPU. The UI always remains responsive, even if the network goes down.
 ```mermaid
     %%{init: {'theme': 'base', 'themeVariables': {'lineColor': '#000000', 'textColor': '#000000', 'signalColor': '#000000', 'actorLineColor': '#000000', 'noteTextColor': '#000000'}}}%%
     sequenceDiagram
@@ -104,7 +107,7 @@ The sequence diagram shows how the system boots up and synchronizes without bloc
     end
 end
 ```
-wiring diagram
+### Wiring diagram - ESP32 and ST7735 TFT 1,8"(160*128) 
 ```mermaid
     graph LR
     
@@ -137,4 +140,65 @@ wiring diagram
     D18 --- ESP32
     D21 --- ESP32
 ```
+## Input Manager
+For the input we use a constant polling(20ms) due to the complications of using interruptions just for the buttons,
+```mermaid
+    sequenceDiagram
+    participant button
+    participant inputManager
+    participant app
 
+    app ->> inputManager: actionBasedOnInput(button.wasPresed())
+    inputManager ->> button: wasPressed()
+    button-->>inputManager: true/false
+    
+    inputManager -->> app: execute actionBasedOnInput()
+
+```
+## Pomodoro Manager
+The PomodoroManager has to synchronize depending on the state you are on and your configuration of rounds and time for each type of round. 
+```mermaid
+   stateDiagram-v2
+    
+    classDef def fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    classDef decision fill:a52019, stroke:#a52019,stroke-width:2px;
+    classDef action fill:#90caf9,stroke:#1565c0,stroke-width:2px;
+
+    [*] --> IDLE
+
+    IDLE --> FOCUS :  Start button
+
+    state FOCUS {
+        [*] --> Working
+        Working --> PAUSE : Pause button
+        PAUSE --> Working : Resume button
+    }
+
+    FOCUS --> CheckRounds() : Time == 0
+
+    state CheckRounds() <<choice>>
+    class CheckRounds() decision
+    state WAITING_FOR_INPUT 
+    
+    CheckRounds() --> WAITING_FOR_INPUT
+    WAITING_FOR_INPUT --> SHORT_BREAK : Rounds < objective
+    WAITING_FOR_INPUT --> LONG_BREAK : Rounds == objective
+
+    state SHORT_BREAK {
+        [*] --> RestingShort
+        RestingShort --> PAUSE_BREAK : Pause button
+        PAUSE_BREAK --> RestingShort : Resume button
+    }
+
+    state LONG_BREAK {
+        [*] --> RestingLong
+        RestingLong --> PAUSE_LONG : Pause button
+        PAUSE_LONG --> RestingLong : Resume button
+    }
+
+    %% Lógica de retorno
+    SHORT_BREAK --> WAITING_FOR_INPUT : Time == 0 
+    WAITING_FOR_INPUT-->FOCUS : Rounds < objective
+    LONG_BREAK --> IDLE : Time == 0 (Final session)
+    
+```

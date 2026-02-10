@@ -28,7 +28,7 @@ void setup(){
   timeManager.startTimeTask(systemEventGroup);
 
   inputManager.begin(commandQueue);     
-  //pomodoroManager.begin(commandQueue);
+  pomodoroManager.begin(commandQueue, 25, 5, 15, 4, 12);
 
   displayManager.startTask();
 }
